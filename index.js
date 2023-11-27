@@ -32,6 +32,8 @@ async function run() {
 
         const database = client.db("skillDb");
         const userCollection = database.collection("users");
+        const teacherCollection = database.collection("teachers");
+        const classCollection = database.collection("classes");
 
         // jwt related api
         app.post('/jwt', async (req, res) => {
@@ -39,6 +41,21 @@ async function run() {
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
             res.send({ token });
         })
+
+        // middlewares --------------------------------------
+        const verifyToken = (req, res, next) =>{
+            if(!req.headers.authorization){
+                return res.status(401).send({message: 'unauthorized access'});
+            }
+            const token = req.headers.authorization.split(' ')[1];
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
+                if(err){
+                    return res.status(401).send({message: 'unauthorized access'});
+                }
+                req.decoded = decoded;
+                next();
+            })
+        }
 
         // users related api
         app.post('/users', async(req, res) =>{
@@ -50,7 +67,28 @@ async function run() {
             }
             const result = await userCollection.insertOne(user);
             res.send(result);
+        });
+
+
+
+        // teacher related api
+        app.post('/teacher', async(req, res)=>{
+            const teacher = req.body;
+            const result = await teacherCollection.insertOne(teacher);
+            res.send(result);
+
         })
+
+
+
+
+
+
+
+
+
+
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
