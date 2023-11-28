@@ -43,27 +43,42 @@ async function run() {
         })
 
         // middlewares --------------------------------------
-        const verifyToken = (req, res, next) =>{
-            if(!req.headers.authorization){
-                return res.status(401).send({message: 'unauthorized access'});
+        const verifyToken = (req, res, next) => {
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: 'unauthorized access' });
             }
             const token = req.headers.authorization.split(' ')[1];
-            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
-                if(err){
-                    return res.status(401).send({message: 'unauthorized access'});
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'unauthorized access' });
                 }
                 req.decoded = decoded;
                 next();
             })
         }
+        // const verifyToken = (req, res, next) => {
+        //     // console.log('inside verify tokenN:', req.headers.authorization);
+        //     if (!req.headers.authorization) {
+        //         return res.status(401).send({ message: 'Unauthorized access' });
+        //     }
+        //     const token = req.headers.authorization.split(' ')[1];
+        //     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        //         if (err) {
+        //             return res.status(401).send({ message: 'Unauthorized access' })
+        //         }
+        //         // console.log('Decoded data with token:', decoded);
+        //         req.decoded = decoded;
+        //         next();
+        //     });
+        // };
 
         // users related api
-        app.post('/users', async(req, res) =>{
+        app.post('/users', async (req, res) => {
             const user = req.body;
-            const query ={email: user?.email};
+            const query = { email: user?.email };
             const existingUser = await userCollection.findOne(query);
-            if(existingUser){
-                return res.send({message: 'User already exists'});
+            if (existingUser) {
+                return res.send({ message: 'User already exists' });
             }
             const result = await userCollection.insertOne(user);
             res.send(result);
@@ -72,8 +87,21 @@ async function run() {
 
 
         // teacher related api
-        app.post('/teacher', async(req, res)=>{
+
+        app.get('/teacher/:email',verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await teacherCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.post('/teacher', async (req, res) => {
             const teacher = req.body;
+            const query = { email: teacher?.email };
+            const existingTeacher = await teacherCollection.findOne(query);
+            if (existingTeacher) {
+                return res.send({ message: 'Request already sent to admin' });
+            }
             const result = await teacherCollection.insertOne(teacher);
             res.send(result);
 
