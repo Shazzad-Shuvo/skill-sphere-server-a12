@@ -58,6 +58,40 @@ async function run() {
         }
 
         // users related api
+
+
+        // api to check if a user is admin or not
+        app.get('/users/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let admin = false;
+            if (user) {
+                admin = user?.role === 'admin';
+            }
+            res.send({ admin });
+        })
+        // api to check if a user is teacher or not
+        app.get('/users/teacher/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let teacher = false;
+            if (user) {
+                teacher = user?.role === 'teacher';
+            }
+            res.send({ teacher });
+        })
+
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = { email: user?.email };
@@ -73,7 +107,7 @@ async function run() {
 
         // teacher related api
 
-        app.get('/teacher/:email',verifyToken, async (req, res) => {
+        app.get('/teacher/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const result = await teacherCollection.findOne(query);
