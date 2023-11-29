@@ -159,10 +159,10 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/teacher/:email',verifyToken, async (req, res) => {
+        app.get('/teacher/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
-            const result = await teacherCollection.find(query).sort({"_id": -1}).limit(1).toArray();
+            const result = await teacherCollection.find(query).sort({ "_id": -1 }).limit(1).toArray();
             res.send(result);
         })
 
@@ -173,16 +173,16 @@ async function run() {
             if (existingTeacher?.status === 'pending') {
                 return res.send({ message: 'Request already sent to admin' });
             }
-            else if(existingTeacher?.status === 'accepted'){
+            else if (existingTeacher?.status === 'accepted') {
                 return res.send({ message: 'Accepted as a teacher' });
             }
             const result = await teacherCollection.insertOne(teacher);
             res.send(result);
         })
 
-        app.patch('/teacher/accept/:id', async(req, res) =>{
+        app.patch('/teacher/accept/:id', async (req, res) => {
             const teacherId = req.params.id;
-            const filter = {_id: new ObjectId(teacherId)};
+            const filter = { _id: new ObjectId(teacherId) };
             const updatedDoc = {
                 $set: {
                     status: 'accepted'
@@ -191,7 +191,7 @@ async function run() {
             const result = await teacherCollection.updateOne(filter, updatedDoc);
 
             const teacher = await teacherCollection.findOne(filter);
-            const query = {email: teacher.email};
+            const query = { email: teacher.email };
 
             const updated = {
                 $set: {
@@ -201,11 +201,11 @@ async function run() {
 
             const updateUserRole = await userCollection.updateOne(query, updated);
 
-            res.send({result, updateUserRole});
+            res.send({ result, updateUserRole });
         })
-        app.patch('/teacher/reject/:id', async(req, res) =>{
+        app.patch('/teacher/reject/:id', async (req, res) => {
             const teacherId = req.params.id;
-            const filter = {_id: new ObjectId(teacherId)};
+            const filter = { _id: new ObjectId(teacherId) };
             const updatedDoc = {
                 $set: {
                     status: 'rejected'
@@ -218,22 +218,64 @@ async function run() {
 
         // class related api
 
-        app.get('/classes/:email',verifyToken,verifyTeacher, async(req, res) =>{
-            const email = req.params.email;
-            const query = {email: email};
+        app.get('/classes', verifyToken, verifyTeacher, async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
             const result = await classCollection.find(query).toArray();
             res.send(result);
         })
 
-        app.post('/classes',verifyToken, verifyTeacher, async(req, res) =>{
+        app.get('/classes/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await classCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.post('/classes', verifyToken, verifyTeacher, async (req, res) => {
             const classData = req.body;
             const result = await classCollection.insertOne(classData);
             res.send(result);
         })
 
-        app.delete('/classes/:id',verifyToken,verifyTeacher, async(req, res) =>{
+        app.patch('/classes/:id',verifyToken, verifyTeacher, async (req, res) => {
+            const classData = req.body;
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    title: classData.title,
+                    price: classData.price,
+                    description: classData.description,
+                    image: classData.image
+                }
+            };
+
+            const result = await classCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        // app.patch('/menu/:id', async (req, res) => {
+        //     const item = req.body;
+        //     const id = req.params.id;
+        //     const filter = { _id: new ObjectId(id) };
+        //     const updateDoc = {
+        //         $set: {
+        //             name: item.name,
+        //             category: item.category,
+        //             price: item.price,
+        //             recipe: item.recipe,
+        //             image: item.image
+        //         }
+        //     };
+
+        //     const result = await menuCollection.updateOne(filter, updateDoc);
+        //     res.send(result);
+        // })
+
+        app.delete('/classes/:id', verifyToken, verifyTeacher, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
             const result = await classCollection.deleteOne(query);
             res.send(result);
         })
