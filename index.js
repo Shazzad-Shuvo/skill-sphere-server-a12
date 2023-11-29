@@ -148,10 +148,10 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/teacher/:email', verifyToken, async (req, res) => {
+        app.get('/teacher/:email',verifyToken, async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
-            const result = await teacherCollection.findOne(query);
+            const result = await teacherCollection.find(query).sort({"_id": -1}).limit(1).toArray();
             res.send(result);
         })
 
