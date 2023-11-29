@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
 const port = process.env.PORT || 5000;
@@ -130,9 +130,23 @@ async function run() {
             res.send(result);
         });
 
-
+        app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            };
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
 
         // teacher related api
+        app.get('/teacher', verifyToken, verifyAdmin, async (req, res) => {
+            const result = await teacherCollection.find().toArray();
+            res.send(result);
+        })
 
         app.get('/teacher/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
@@ -141,16 +155,53 @@ async function run() {
             res.send(result);
         })
 
-        app.post('/teacher', async (req, res) => {
+        app.post('/teacher', verifyToken, async (req, res) => {
             const teacher = req.body;
             const query = { email: teacher?.email };
             const existingTeacher = await teacherCollection.findOne(query);
-            if (existingTeacher) {
+            if (existingTeacher?.status === 'pending') {
                 return res.send({ message: 'Request already sent to admin' });
+            }
+            else if(existingTeacher?.status === 'accepted'){
+                return res.send({ message: 'Accepted as a teacher' });
             }
             const result = await teacherCollection.insertOne(teacher);
             res.send(result);
+        })
 
+        app.patch('/teacher/accept/:id', async(req, res) =>{
+            const teacherId = req.params.id;
+            const filter = {_id: new ObjectId(teacherId)};
+            const updatedDoc = {
+                $set: {
+                    status: 'accepted'
+                }
+            };
+            const result = await teacherCollection.updateOne(filter, updatedDoc);
+
+            const teacher = await teacherCollection.findOne(filter);
+            const query = {email: teacher.email};
+
+            const updated = {
+                $set: {
+                    role: 'teacher'
+                }
+            };
+
+            const updateUserRole = await userCollection.updateOne(query, updated);
+
+            res.send({result, updateUserRole});
+        })
+        app.patch('/teacher/reject/:id', async(req, res) =>{
+            const teacherId = req.params.id;
+            const filter = {_id: new ObjectId(teacherId)};
+            const updatedDoc = {
+                $set: {
+                    status: 'rejected'
+                }
+            };
+            const result = await teacherCollection.updateOne(filter, updatedDoc);
+            res.send(result);
         })
 
 
