@@ -67,6 +67,17 @@ async function run() {
             }
             next();
         }
+        // use verifyTeacher after verifyToken
+        const verifyTeacher = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isTeacher = user?.role === 'teacher';
+            if (!isTeacher) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        }
 
         // users related api
 
@@ -201,6 +212,15 @@ async function run() {
                 }
             };
             const result = await teacherCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
+
+
+        // class related api
+
+        app.post('/classes',verifyToken, verifyTeacher, async(req, res) =>{
+            const classData = req.body;
+            const result = await classCollection.insertOne(classData);
             res.send(result);
         })
 
