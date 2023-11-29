@@ -218,6 +218,11 @@ async function run() {
 
         // class related api
 
+        app.get('/classes',verifyToken,verifyTeacher, async(req, res) =>{
+            const result = await classCollection.find().toArray();
+            res.send(result);
+        })
+
         app.post('/classes',verifyToken, verifyTeacher, async(req, res) =>{
             const classData = req.body;
             const result = await classCollection.insertOne(classData);
