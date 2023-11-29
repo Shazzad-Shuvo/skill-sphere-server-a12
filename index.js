@@ -218,14 +218,23 @@ async function run() {
 
         // class related api
 
-        app.get('/classes',verifyToken,verifyTeacher, async(req, res) =>{
-            const result = await classCollection.find().toArray();
+        app.get('/classes/:email',verifyToken,verifyTeacher, async(req, res) =>{
+            const email = req.params.email;
+            const query = {email: email};
+            const result = await classCollection.find(query).toArray();
             res.send(result);
         })
 
         app.post('/classes',verifyToken, verifyTeacher, async(req, res) =>{
             const classData = req.body;
             const result = await classCollection.insertOne(classData);
+            res.send(result);
+        })
+
+        app.delete('/classes/:id',verifyToken,verifyTeacher, async(req, res) =>{
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await classCollection.deleteOne(query);
             res.send(result);
         })
 
