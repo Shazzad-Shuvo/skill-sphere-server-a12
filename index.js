@@ -203,6 +203,7 @@ async function run() {
 
             res.send({ result, updateUserRole });
         })
+
         app.patch('/teacher/reject/:id', async (req, res) => {
             const teacherId = req.params.id;
             const filter = { _id: new ObjectId(teacherId) };
@@ -218,9 +219,19 @@ async function run() {
 
         // class related api
 
-        app.get('/classes', verifyToken, verifyTeacher, async (req, res) => {
+        app.get('/classes', async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
+            const result = await classCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.get('/allClasses', async (req, res) => {
+            const result = await classCollection.find().toArray();
+            res.send(result);
+        })
+        app.get('/allApprovedClasses', async (req, res) => {
+            const query = {status: "approved"};
             const result = await classCollection.find(query).toArray();
             res.send(result);
         })
@@ -255,23 +266,29 @@ async function run() {
             res.send(result);
         })
 
-        // app.patch('/menu/:id', async (req, res) => {
-        //     const item = req.body;
-        //     const id = req.params.id;
-        //     const filter = { _id: new ObjectId(id) };
-        //     const updateDoc = {
-        //         $set: {
-        //             name: item.name,
-        //             category: item.category,
-        //             price: item.price,
-        //             recipe: item.recipe,
-        //             image: item.image
-        //         }
-        //     };
+        app.patch('/classes/approve/:id', async (req, res) => {
+            const classId = req.params.id;
+            const filter = { _id: new ObjectId(classId) };
+            const updatedDoc = {
+                $set: {
+                    status: 'approved'
+                }
+            };
+            const result = await classCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
 
-        //     const result = await menuCollection.updateOne(filter, updateDoc);
-        //     res.send(result);
-        // })
+        app.patch('/classes/reject/:id', async (req, res) => {
+            const classId = req.params.id;
+            const filter = { _id: new ObjectId(classId) };
+            const updatedDoc = {
+                $set: {
+                    status: 'rejected'
+                }
+            };
+            const result = await classCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
 
         app.delete('/classes/:id', verifyToken, verifyTeacher, async (req, res) => {
             const id = req.params.id;
