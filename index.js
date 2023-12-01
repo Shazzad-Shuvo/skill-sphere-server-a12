@@ -35,6 +35,7 @@ async function run() {
         const userCollection = database.collection("users");
         const teacherCollection = database.collection("teachers");
         const classCollection = database.collection("classes");
+        const paymentCollection = database.collection("payments");
 
         // jwt related api
         app.post('/jwt', async (req, res) => {
@@ -273,7 +274,8 @@ async function run() {
             const filter = { _id: new ObjectId(classId) };
             const updatedDoc = {
                 $set: {
-                    status: 'approved'
+                    status: 'approved',
+                    enrolledStudent: 0
                 }
             };
             const result = await classCollection.updateOne(filter, updatedDoc);
@@ -310,10 +312,29 @@ async function run() {
                 currency: 'usd',
                 payment_method_types: ['card']
             })
-            
+
             res.send({
                 clientSecret: paymentIntent.client_secret,
             });
+        })
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            // console.log('Payment info', payment);
+            const paymentResult = await paymentCollection.insertOne(payment);
+            const id = req.body.classId;
+            const filter = {_id: new ObjectId(id)}; 
+            const classResult = await classCollection.findOne(filter); 
+            const newEnrolled = classResult?.enrolledStudent + 1;
+
+            const updatedDoc = {
+                $set: {
+                    enrolledStudent: newEnrolled
+                }
+            };
+            const result = await classCollection.updateOne(filter, updatedDoc);
+
+            res.send(paymentResult);
         })
 
 
