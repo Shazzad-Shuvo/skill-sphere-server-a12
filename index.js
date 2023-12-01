@@ -337,6 +337,22 @@ async function run() {
             res.send(paymentResult);
         })
 
+        // enrolled classes api
+        app.get('/enrolled/:email',verifyToken, async(req, res) =>{
+            const email = req.params.email;
+            const query = {email: email}
+            const options = {
+                projection: {_id: 0, classId: 1}
+            }
+            const results = await paymentCollection.find(query, options).toArray();
+            const ids = results.map(result => new ObjectId(result.classId));
+
+            const filter = {_id: {$in : ids}}
+            const enrolledClasses = await classCollection.find(filter).toArray();
+            res.send(enrolledClasses);
+
+        })
+
 
 
 
