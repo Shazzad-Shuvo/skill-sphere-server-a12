@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const port = process.env.PORT || 5000;
 
@@ -230,8 +231,9 @@ async function run() {
             const result = await classCollection.find().toArray();
             res.send(result);
         })
+
         app.get('/allApprovedClasses', async (req, res) => {
-            const query = {status: "approved"};
+            const query = { status: "approved" };
             const result = await classCollection.find(query).toArray();
             res.send(result);
         })
@@ -249,7 +251,7 @@ async function run() {
             res.send(result);
         })
 
-        app.patch('/classes/:id',verifyToken, verifyTeacher, async (req, res) => {
+        app.patch('/classes/:id', verifyToken, verifyTeacher, async (req, res) => {
             const classData = req.body;
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
@@ -298,6 +300,21 @@ async function run() {
         })
 
 
+        // payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
 
 
 
