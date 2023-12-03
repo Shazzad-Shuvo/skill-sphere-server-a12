@@ -37,6 +37,7 @@ async function run() {
         const classCollection = database.collection("classes");
         const paymentCollection = database.collection("payments");
         const assignmentCollection = database.collection("assignments");
+        const submittedAssignmentCollection = database.collection("submittedAssignments");
 
         // jwt related api
         app.post('/jwt', async (req, res) => {
@@ -45,7 +46,7 @@ async function run() {
             res.send({ token });
         })
 
-        // middlewares --------------------------------------
+        // middlewares --------------------------------------------------------------------------------
         const verifyToken = (req, res, next) => {
             if (!req.headers.authorization) {
                 return res.status(401).send({ message: 'unauthorized access' });
@@ -82,7 +83,7 @@ async function run() {
             next();
         }
 
-        // users related api
+        // users related api-----------------------------------------------------------------------
 
         app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
             const result = await userCollection.find().toArray();
@@ -156,7 +157,7 @@ async function run() {
             res.send(result);
         })
 
-        // teacher related api
+        // teacher related api--------------------------------------------------------------------------------
         app.get('/teacher', verifyToken, verifyAdmin, async (req, res) => {
             const result = await teacherCollection.find().toArray();
             res.send(result);
@@ -220,7 +221,7 @@ async function run() {
         })
 
 
-        // class related api
+        // class related api---------------------------------------------------------------------
 
         app.get('/classes', async (req, res) => {
             const email = req.query.email;
@@ -302,16 +303,34 @@ async function run() {
             res.send(result);
         })
 
-        // assignment related api
+        // assignment related api----------------------------------------------------------------
 
-        app.get('/assignments', async(req, res) =>{
-            const result = await assignmentCollection.find().toArray();
+        app.get('/assignments', async (req, res) => {
+            const classId = req.query.id;
+            const filter = { classId: classId };
+            const result = await assignmentCollection.find(filter).toArray();
             res.send(result);
         })
 
-        app.post('/assignments',verifyToken,verifyTeacher, async(req, res) =>{
+        app.post('/assignments', verifyToken, verifyTeacher, async (req, res) => {
             const assignment = req.body;
             const result = await assignmentCollection.insertOne(assignment);
+            res.send(result);
+        })
+
+        app.get('/submitted', async (req, res) => {
+            const classId = req.query.id;
+            const todayDate = req.query.date;
+            console.log(todayDate);
+            const filter = { classId: classId, date: todayDate };
+            const result = await submittedAssignmentCollection.find(filter).toArray();
+            console.log(result);
+            res.send(result);
+        })
+
+        app.post('/submitted', async (req, res) => {
+            const submittedAssignment = req.body;
+            const result = await submittedAssignmentCollection.insertOne(submittedAssignment);
             res.send(result);
         })
 
@@ -332,14 +351,14 @@ async function run() {
             });
         })
 
-        // payment related api
+        // payment related api------------------------------------------------------------
         app.post('/payments', async (req, res) => {
             const payment = req.body;
             // console.log('Payment info', payment);
             const paymentResult = await paymentCollection.insertOne(payment);
             const id = req.body.classId;
-            const filter = {_id: new ObjectId(id)}; 
-            const classResult = await classCollection.findOne(filter); 
+            const filter = { _id: new ObjectId(id) };
+            const classResult = await classCollection.findOne(filter);
             const newEnrolled = classResult?.enrolledStudent + 1;
 
             const updatedDoc = {
@@ -352,17 +371,17 @@ async function run() {
             res.send(paymentResult);
         })
 
-        // enrolled classes api
-        app.get('/enrolled',verifyToken, async(req, res) =>{
+        // enrolled classes api---------------------------------------------------------------
+        app.get('/enrolled', verifyToken, async (req, res) => {
             const email = req.query.email;
-            const query = {email: email}
+            const query = { email: email }
             const options = {
-                projection: {_id: 0, classId: 1}
+                projection: { _id: 0, classId: 1 }
             }
             const results = await paymentCollection.find(query, options).toArray();
             const ids = results.map(result => new ObjectId(result.classId));
 
-            const filter = {_id: {$in : ids}}
+            const filter = { _id: { $in: ids } }
             const enrolledClasses = await classCollection.find(filter).toArray();
             res.send(enrolledClasses);
 
