@@ -38,6 +38,7 @@ async function run() {
         const paymentCollection = database.collection("payments");
         const assignmentCollection = database.collection("assignments");
         const submittedAssignmentCollection = database.collection("submittedAssignments");
+        const reviewCollection = database.collection("reviews");
 
         // jwt related api
         app.post('/jwt', async (req, res) => {
@@ -321,10 +322,8 @@ async function run() {
         app.get('/submitted', async (req, res) => {
             const classId = req.query.id;
             const todayDate = req.query.date;
-            console.log(todayDate);
             const filter = { classId: classId, date: todayDate };
             const result = await submittedAssignmentCollection.find(filter).toArray();
-            console.log(result);
             res.send(result);
         })
 
@@ -334,8 +333,15 @@ async function run() {
             res.send(result);
         })
 
+        // review related api
+        app.post('/review', async(req, res) =>{
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        })
 
-        // payment intent
+
+        // payment intent------------------------------------------------------------------------------
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
             const amount = parseInt(price * 100);
