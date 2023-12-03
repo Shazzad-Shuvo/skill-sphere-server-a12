@@ -242,6 +242,14 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/featuredClasses', async (req, res) => {
+            const query = { status: "approved" };
+            const result = await classCollection.find(query).sort({ enrolledStudent: -1 }).limit(5).toArray();
+            res.send(result);
+
+
+        })
+
         app.get('/classes/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -334,7 +342,12 @@ async function run() {
         })
 
         // review related api
-        app.post('/review', async(req, res) =>{
+        app.get('/review', async (req, res) => {
+            const result = await reviewCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.post('/review', async (req, res) => {
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
             res.send(result);
@@ -393,6 +406,18 @@ async function run() {
 
         })
 
+        // stats
+        // app.get('/stats', async (req, res) => {
+        //     const totalUser = await userCollection.find().toArray();
+        //     const totalClasses = await classCollection.find({ status: "approved" }).toArray();
+        //     const totalEnrolled = await paymentCollection.find().toArray();
+        //     res.send({ totalUser, totalClasses, totalEnrolled });
+        // })
+
+        // app.get('/stats', async(req, res) =>{
+        //     const users = await userCollection.estimatedDocumentCount();
+        //     res.send(users);
+        // })
 
 
 
