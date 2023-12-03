@@ -36,6 +36,7 @@ async function run() {
         const teacherCollection = database.collection("teachers");
         const classCollection = database.collection("classes");
         const paymentCollection = database.collection("payments");
+        const assignmentCollection = database.collection("assignments");
 
         // jwt related api
         app.post('/jwt', async (req, res) => {
@@ -301,6 +302,19 @@ async function run() {
             res.send(result);
         })
 
+        // assignment related api
+
+        app.get('/assignments', async(req, res) =>{
+            const result = await assignmentCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.post('/assignments',verifyToken,verifyTeacher, async(req, res) =>{
+            const assignment = req.body;
+            const result = await assignmentCollection.insertOne(assignment);
+            res.send(result);
+        })
+
 
         // payment intent
         app.post('/create-payment-intent', async (req, res) => {
@@ -318,6 +332,7 @@ async function run() {
             });
         })
 
+        // payment related api
         app.post('/payments', async (req, res) => {
             const payment = req.body;
             // console.log('Payment info', payment);
@@ -338,8 +353,8 @@ async function run() {
         })
 
         // enrolled classes api
-        app.get('/enrolled/:email',verifyToken, async(req, res) =>{
-            const email = req.params.email;
+        app.get('/enrolled',verifyToken, async(req, res) =>{
+            const email = req.query.email;
             const query = {email: email}
             const options = {
                 projection: {_id: 0, classId: 1}
