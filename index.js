@@ -413,6 +413,14 @@ async function run() {
 
         })
 
+        app.get('/siteData', async(req, res) =>{
+            const users = await userCollection.estimatedDocumentCount();
+            // const query = { status: "approved" };
+            // const classes = await classCollection.find(query).toArray().estimatedDocumentCount();
+            const enrolled = await paymentCollection.estimatedDocumentCount();
+            res.send({users, enrolled});
+        })
+
         // stats
         // app.get('/stats', async (req, res) => {
         //     const totalUser = await userCollection.find().toArray();
